@@ -40,8 +40,32 @@
 
         </div>
 
-        
+
         <div id="select" class="border">
+        </div>
+        <div class="row pt-3 mb-3 mt-1">
+            <label for="upload" class="form-label">Choose Font</label>
+            <input class="form-control" type="file" id="upload">
+
+        </div>
+        <div class="row">
+            <div id="preview" class="col-3 border">
+                <canvas width="300" height="300">
+
+                </canvas>
+            </div>
+            <div id="idk" class="col-9">
+                <textarea id="svg-codes">
+
+                </textarea>
+                <button onclick="svgCodes.select()" id="select-all" type="button" class="btn btn-secondary">Select
+                    All</button>
+            </div>
+
+
+        </div>
+        <div class="row pt-3 mb-5">
+            <button type="button" class="btn btn-outline-primary">Download</button>
         </div>
 
 
@@ -53,6 +77,7 @@
         </div>
     </div>
 </body>
+<script src="opentype.min.js"></script>
 <script>
     //setting btn color lol
     const faceSelectors = document.querySelectorAll("#face-select button");
@@ -73,24 +98,78 @@
 
     mat.addEventListener("mouseenter", ev => {
         console.log("enter")
-        dialog.classList.toggle("hidden",false)
+        dialog.classList.toggle("hidden", false)
     });
 
     mat.addEventListener("mouseleave", ev => {
         console.log("leave")
-        dialog.classList.toggle("hidden",true)
+        dialog.classList.toggle("hidden", true)
     });
 
     mat.addEventListener("mousemove", ev => {
         // console.log(ev.offsetX,ev.offsetY)
-        if(ev.offsetX < 0 || ev.offsetY < 0) return;
-        dialog.classList.toggle("hidden",false)
+        if (ev.offsetX < 0 || ev.offsetY < 0) return;
+        dialog.classList.toggle("hidden", false)
         dialog.style = `top: ${ev.pageY + 20}px; left: ${ev.pageX + 20}px;`
-        let dec = Math.max((Math.floor((ev.offsetX * 256/mat.clientWidth) )) * Math.floor((ev.offsetY * 256 / mat.clientHeight) ) - 1 + 65535 * activeMat,0)
+        let dec = Math.max((Math.round((ev.offsetX * 256 / mat.clientWidth))) * Math.round((ev.offsetY * 256 / mat.clientHeight)) - 1 + 65535 * activeMat, 0)
         let hex = dec.toString(16)
         while (hex.length < 6) hex = "0" + hex;
-        dialog.firstElementChild.innerHTML = `0x${hex} ${String.fromCharCode(dec)}`
+        dialog.firstElementChild.innerHTML = `0x${hex} ${String.fromCharCode(dec)}`;
+        dialog.firstElementChild.curr = String.fromCharCode(dec);
     });
+    mat.addEventListener("click", () => {
+        try {
+            makeChar(dialog.firstElementChild.curr);
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    // let fontName = "fonts/SourceHanSerif-Heavy.ttf"
+    const previewer = document.querySelector("#preview canvas").getContext('2d');
+    const svgCodes = document.getElementById("svg-codes");
+
+    let defaultFont = null;
+
+    async function loadDefaultFont(){
+        if(defaultFont) return defaultFont;
+        defaultFont = await opentype.load("fonts/SourceHanSerif-Heavy.ttf");
+        return defaultFont;
+    }
+
+    async function makeChar(char) {
+        const font = customFont || await loadDefaultFont();
+        const path = font.getPath(char, 0, 0, 150);
+        const bound = path.getBoundingBox();
+
+        console.log(path);
+        await previewer.clearRect(0, 0, 300, 300);
+        font.draw(previewer, char, 150 - (bound.x2 - bound.x1) / 2 - bound.x1, 150 + (bound.y2 - bound.y1) / 2 - bound.y2, 150);
+        svgCodes.value = path.toSVG();
+    }
+    let customFont = null;
+    // let 
+    function handleFileSelect(evt) {
+        let files = evt.target.files; // FileList object
+
+        // use the 1st file from the list
+        let f = files[0];
+        console.log(files);
+
+        let reader = new FileReader();
+
+        // Closure to capture the file information.
+        reader.onload = (function (theFile) {
+            return function (e) {
+
+                // console.log(e.target.result)
+                customFont = opentype.parse(e.target.result);
+            };
+        })(f);
+        reader.readAsArrayBuffer(f);
+    }
+
+    document.getElementById('upload').addEventListener('change', handleFileSelect, false);
 </script>
 
 
