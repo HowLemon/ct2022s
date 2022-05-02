@@ -9,9 +9,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <!-- score outputer -->
+<script src="https://cdn.jsdelivr.net/gh/t109598105/ScoreOutputer@latest/dist/scoreoutputer.min.js"></script>
+
 </head>
 
 <body>
+    <div id="score-btn"></div>
     <div class="container">
         <div class="row mt-5 pt-3 border-bottom">
             <h1>CT2022s HW2</h1>
@@ -47,6 +52,10 @@
             <label for="upload" class="form-label">Choose Font</label>
             <input class="form-control" type="file" id="upload">
 
+        </div>
+        <div class="row mb-3 mt-1 form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="draw-nodes">
+            <label class="form-check-label" for="draw-nodes">Draw Nodes</label>
         </div>
         <div class="row">
             <div id="preview" class="col-3 border">
@@ -128,23 +137,35 @@
     // let fontName = "fonts/SourceHanSerif-Heavy.ttf"
     const previewer = document.querySelector("#preview canvas").getContext('2d');
     const svgCodes = document.getElementById("svg-codes");
+    const drawNodes = document.getElementById("draw-nodes")
+
+    drawNodes.onclick = () => {
+        if (currentChar) makeChar(currentChar);
+    }
 
     let defaultFont = null;
 
-    async function loadDefaultFont(){
-        if(defaultFont) return defaultFont;
+    async function loadDefaultFont() {
+        if (defaultFont) return defaultFont;
         defaultFont = await opentype.load("fonts/SourceHanSerif-Heavy.ttf");
         return defaultFont;
     }
 
+    let currentChar = null;
+
     async function makeChar(char) {
+        currentChar = char;
         const font = customFont || await loadDefaultFont();
         const path = font.getPath(char, 0, 0, 150);
+
         const bound = path.getBoundingBox();
 
         console.log(path);
         await previewer.clearRect(0, 0, 300, 300);
         font.draw(previewer, char, 150 - (bound.x2 - bound.x1) / 2 - bound.x1, 150 + (bound.y2 - bound.y1) / 2 - bound.y2, 150);
+        if (drawNodes.checked) {
+            font.drawPoints(previewer, char, 150 - (bound.x2 - bound.x1) / 2 - bound.x1, 150 + (bound.y2 - bound.y1) / 2 - bound.y2, 150);
+        }
         svgCodes.value = path.toSVG();
     }
     let customFont = null;
@@ -160,10 +181,10 @@
 
         // Closure to capture the file information.
         reader.onload = (function (theFile) {
-            return function (e) {
+            return async function (e) {
 
                 // console.log(e.target.result)
-                customFont = opentype.parse(e.target.result);
+                customFont = await opentype.parse(e.target.result);
             };
         })(f);
         reader.readAsArrayBuffer(f);
@@ -171,6 +192,38 @@
 
     document.getElementById('upload').addEventListener('change', handleFileSelect, false);
 </script>
+<script>
+    var so = new ScoreOutputer("109598110");
+    so.addChild("字型檔手動讀取", 6, true);
+        so.addChild("字型檔自動讀取", 2, true);
+        so.addChild("字型描點", 2, true);
 
+        //產生自評表，參數如下所示
+        so.renderModal(
+            //1. 自評表插入位置 (預設 document.body)
+            document.body,
+            //2. 自評表背景 (預設紅色)
+            'rgba(100,45,58,1)',
+            //3. 自評表文字顏色 (預設白色)
+            'white',
+            //4. 自評表文字大小 (預設 14pt)
+            '15pt',
+            //5. 自評表 checkbox 文字大小 (預設多少忘了)
+            '15px',
+            //6. 自評表標題 (預設 "自我評分表")
+            '自我評分表'
+        );
+
+        //設定下載按鈕 <-- 一定要呼叫這個函數，不然沒有下載功能
+        so.installDownloadBtn();
+
+        //產生 "開啟自評表按鈕"
+        so.renderBtn(
+            //自評表按鈕插入位置
+            document.getElementById("score-btn"),
+            //自評表按鈕文字
+            "開啟自評表"
+        );
+</script>
 
 </html>
