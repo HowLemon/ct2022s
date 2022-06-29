@@ -108,7 +108,7 @@
 
         const output = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         <svg 
-    viewBox="${currentBound.x1 - 10} ${currentBound.y1 - currentBound.y2 * 2  + fHeight / 2 - 10} ${currentBound.x2 + 10} ${-currentBound.y2 + fHeight/2 + 10}"
+    viewBox="${currentBound.x1 } ${currentBound.y1 - currentBound.y2 * 2  + fHeight / 2 } ${currentBound.x2 } ${-currentBound.y2 + fHeight/2 }"
     width="${fWidth}"
     height="${fHeight}"
    xmlns="http://www.w3.org/2000/svg"
@@ -128,6 +128,7 @@
             newLink.style.display = "none";
             document.body.appendChild(newLink);
         }
+        
         newLink.click(); 
     }
 
