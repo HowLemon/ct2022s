@@ -44,8 +44,12 @@
             </div>
 
         </div>
+        <div class="row pt-3 mt-1">
+            多字元輸入
+            <input id="multichar" onchange="alert">
 
-
+        </div>
+        
         <div id="select" class="border">
         </div>
         <div class="row pt-3 mb-3 mt-1">
@@ -74,7 +78,7 @@
 
         </div>
         <div class="row pt-3 mb-5">
-            <button type="button" class="btn btn-outline-primary">Download</button>
+            <button id="download" type="button" class="btn btn-outline-primary">Download</button>
         </div>
 
 
@@ -85,8 +89,49 @@
             This is some text within a card body.
         </div>
     </div>
+    <div id="svg-preview"></div>
 </body>
 <script src="opentype.min.js"></script>
+<script>
+    const multichar = document.getElementById("multichar");
+    multichar.onchange = (e)=>{
+        makeChar(e.target.value);
+    }
+
+    const downloadbtn = document.getElementById("download");
+    downloadbtn.onclick = ()=>{
+        const sFileName = currentChar+'.svg';	   // The file to save the data. 
+        const codes = document.getElementById("svg-codes").value;
+
+        const fWidth = currentBound.x2 - currentBound.x1;
+        const fHeight = currentBound.y2 - currentBound.y1;
+
+        const output = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <svg 
+    viewBox="${currentBound.x1 - 10} ${currentBound.y1 - currentBound.y2 * 2  + fHeight / 2 - 10} ${currentBound.x2 + 10} ${-currentBound.y2 + fHeight/2 + 10}"
+    width="${fWidth}"
+    height="${fHeight}"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+   ${codes}
+    </svg>
+        `
+        const textToBLOB = new Blob([output], { type: 'text/plain' });
+        let newLink = document.createElement("a");
+        newLink.download = sFileName;
+
+        if (window.webkitURL != null) {
+            newLink.href = window.webkitURL.createObjectURL(textToBLOB);
+        }
+        else {
+            newLink.href = window.URL.createObjectURL(textToBLOB);
+            newLink.style.display = "none";
+            document.body.appendChild(newLink);
+        }
+        newLink.click(); 
+    }
+
+</script>
 <script>
     //setting btn color lol
     const faceSelectors = document.querySelectorAll("#face-select button");
@@ -96,6 +141,7 @@
     })
     const mat = document.getElementById("select");
     const dialog = document.getElementById("dialog");
+    
     let activeMat = -1
     function setMatrix(i) {
         activeMat = i;
@@ -152,6 +198,7 @@
     }
 
     let currentChar = null;
+    let currentBound = null;
 
     async function makeChar(char) {
         currentChar = char;
@@ -167,6 +214,7 @@
             font.drawPoints(previewer, char, 150 - (bound.x2 - bound.x1) / 2 - bound.x1, 150 + (bound.y2 - bound.y1) / 2 - bound.y2, 150);
         }
         svgCodes.value = path.toSVG();
+        currentBound = bound;
     }
     let customFont = null;
     // let 
